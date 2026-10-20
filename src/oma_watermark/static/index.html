@@ -48,14 +48,23 @@
               <input id="resultTab" type="radio" name="preview-view" class="tab tab-disabled" value="result" aria-label="结果" disabled />
               <input id="maskTab" type="radio" name="preview-view" class="tab tab-disabled" value="mask" aria-label="检测区" disabled />
             </div>
-            <button id="replaceButton" type="button" class="btn btn-ghost btn-sm" disabled>
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <path d="m17 8-5-5-5 5" />
-                <path d="M12 3v12" />
-              </svg>
-              换一张
-            </button>
+            <div class="flex items-center gap-1">
+              <button id="helpButton" type="button" class="btn btn-ghost btn-sm btn-circle" aria-label="帮助" title="帮助">
+                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
+                  <path d="M12 17h.01" />
+                </svg>
+              </button>
+              <button id="replaceButton" type="button" class="btn btn-ghost btn-sm" disabled>
+                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <path d="m17 8-5-5-5 5" />
+                  <path d="M12 3v12" />
+                </svg>
+                换一张
+              </button>
+            </div>
           </div>
 
           <div id="dropzone" class="dropzone p-4 sm:p-5">
@@ -131,7 +140,7 @@
                 <label for="modeSelect" class="mb-1.5 block text-sm font-medium">修复模式</label>
                 <select id="modeSelect" class="select select-bordered select-sm w-full">
                   <option value="fast">快速 · OpenCV</option>
-                  <option value="ai">AI 精修 · LaMa</option>
+                  <option value="ai" selected>AI 精修 · LaMa</option>
                 </select>
                 <p id="aiHint" class="mt-1.5 text-[11px] leading-4 text-base-content/45">正在检测 AI 模型…</p>
               </div>
@@ -177,20 +186,55 @@
               </a>
             </div>
           </section>
-
-          <section class="rounded-box border border-base-300 bg-base-100/60 p-4 text-xs leading-5 text-base-content/55">
-            <p class="mb-2 font-medium text-base-content/70">效果提示</p>
-            <ul class="list-disc space-y-1 pl-4">
-              <li>选区越贴近水印，修复效果越好。</li>
-              <li>白色水印没清干净时，调低阈值再处理。</li>
-              <li>“检测区”可查看本次被修复的红色像素。</li>
-              <li>AI 精修更擅长恢复纹理；首次使用需先下载模型。</li>
-              <li>图片只在本机处理，不经过第三方服务。</li>
-            </ul>
-          </section>
         </aside>
       </div>
     </main>
+
+    <dialog id="helpDialog" class="modal modal-bottom sm:modal-middle" aria-labelledby="helpTitle">
+      <div class="modal-box max-w-lg">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm btn-circle absolute right-4 top-4" aria-label="关闭帮助">
+            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </form>
+
+        <h2 id="helpTitle" class="text-[21px] font-semibold tracking-tight">使用帮助</h2>
+        <p class="mt-2 text-sm leading-6 text-base-content/60">框选水印后，先用默认的 AI 精修；复杂背景通常比快速模式更自然。</p>
+
+        <div class="mt-5 space-y-4 text-sm leading-6">
+          <div>
+            <p class="font-semibold">选区</p>
+            <p class="mt-1 text-base-content/65">选区尽量贴近水印，并留一点边缘余量。选区越准确，修复越自然。</p>
+          </div>
+          <div>
+            <p class="font-semibold">阈值与扩展</p>
+            <p class="mt-1 text-base-content/65">水印没清干净时调低亮度阈值；出现白边或阴影时调大边缘扩展。扩展越大，修复区域越大。</p>
+          </div>
+          <div>
+            <p class="font-semibold">模式选择</p>
+            <p class="mt-1 text-base-content/65">快速 · OpenCV 适合纯色、简单背景；AI 精修 · LaMa 更适合衣物、地面、纹理等复杂背景。</p>
+          </div>
+          <div>
+            <p class="font-semibold">检测区</p>
+            <p class="mt-1 text-base-content/65">“检测区”会用红色标出本次被修复的像素，便于确认选区是否准确。</p>
+          </div>
+          <div>
+            <p class="font-semibold">隐私</p>
+            <p class="mt-1 text-base-content/65">图片只在本机的本地服务中处理，不经过第三方服务。</p>
+          </div>
+        </div>
+
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-primary">知道了</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
+    </dialog>
 
     <script src="/static/app.js"></script>
   </body>

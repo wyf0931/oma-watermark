@@ -35,7 +35,7 @@ def _static_dir() -> Path:
 STATIC_DIR = _static_dir()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
-app = FastAPI(title="水印清除器", version="0.1.0")
+app = FastAPI(title="水印清除器", version="0.1.1")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -66,7 +66,7 @@ def remove(
     height: int = Form(...),
     threshold: int = Form(DEFAULT_THRESHOLD),
     expand: int = Form(DEFAULT_EXPAND),
-    mode: str = Form("fast"),
+    mode: str = Form("ai"),
 ) -> dict[str, object]:
     if mode not in {"fast", "ai"}:
         raise HTTPException(status_code=422, detail="修复模式必须是 fast 或 ai")

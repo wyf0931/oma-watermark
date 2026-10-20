@@ -1,6 +1,6 @@
 [project]
 name = "oma-watermark"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local web tool for removing light watermarks with OpenCV and optional LaMa AI inpainting"
 readme = "README.md"
 authors = [

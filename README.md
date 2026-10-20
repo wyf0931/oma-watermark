@@ -1,6 +1,6 @@
 # 水印清除器
 
-一个本地运行的 Web 小工具和 macOS 桌面应用：上传图片，用鼠标框出水印区域，自动识别浅色水印像素，再选择快速 OpenCV 修复或可选的 LaMa AI 精修。
+一个本地运行的 Web 小工具和 macOS 桌面应用：上传图片，用鼠标框出水印区域，自动识别浅色水印像素，默认使用 LaMa AI 精修，也可切换到快速的 OpenCV 修复。
 
 图片只发送到本机服务，不经过第三方。Web 版和桌面版共用同一套 FastAPI + HTML/CSS/JS 界面。
 
@@ -74,7 +74,7 @@ uv sync --extra desktop
 uv run oma-watermark-desktop
 ```
 
-桌面模式会隐藏网页顶部的 navbar，改用 macOS 原生窗口标题栏。界面仍是响应式的，窗口最小尺寸约 980×700。
+桌面模式会隐藏网页顶部的 navbar，改用 macOS 原生窗口标题栏。默认窗口 1240×880，最小尺寸约 980×780；桌面窗口隐藏页面滚动条，效果提示移到工具栏右上角的「?」帮助弹窗。
 
 ### 本地构建 DMG
 
@@ -117,9 +117,9 @@ powershell -ExecutionPolicy Bypass -File packaging/build_windows.ps1
 
 1. 拖入或选择一张图片（PNG / JPEG / WebP / BMP，≤ 25 MB）。
 2. 在原图上拖动鼠标，框出一个包含水印的矩形。
-3. 选择修复模式：
-   - **快速 · OpenCV**：无需模型，约 0.1 秒，适合纯色/简单背景；修复区域偏平滑。
+3. 默认使用 **AI 精修 · LaMa**；模型不可用时会自动回退到 **快速 · OpenCV**。
    - **AI 精修 · LaMa**：需要模型，CPU 推理约 3–4 秒（首次加载模型约 8 秒），更擅长恢复纹理、鞋履、地面、衣物等复杂背景。
+   - **快速 · OpenCV**：无需模型，约 0.1 秒，适合纯色/简单背景；修复区域偏平滑。
 4. 按需调整「亮度阈值」和「边缘扩展」。
 5. 点击「祛除水印」，在「原图 / 结果 / 检测区」之间切换检查，满意后下载。
 
@@ -190,7 +190,7 @@ uv run pytest
 | `width`, `height` | int | ROI 尺寸 |
 | `threshold` | int | 亮度阈值，默认 200 |
 | `expand` | int | 边缘扩展像素，0–12，默认 6 |
-| `mode` | string | `fast`（默认）或 `ai` |
+| `mode` | string | `ai`（默认）或 `fast` |
 
 返回 JSON：`result`、`mask_overlay`（data URL）、`filename`、尺寸、`detected_pixels`、`mode`、`expand`、`roi`。
 

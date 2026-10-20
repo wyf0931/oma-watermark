@@ -118,8 +118,8 @@ def main() -> None:
             "水印清除器",
             f"http://{HOST}:{port}/?desktop=1",
             width=1240,
-            height=860,
-            min_size=(980, 700),
+            height=880,
+            min_size=(980, 780),
             background_color="#f5f5f7",
             zoomable=True,
         )

@@ -10,11 +10,11 @@
 2. 用户手工框选包含水印的矩形 ROI。
 3. 服务端用 OpenCV 识别 ROI 内的浅色/白色像素并生成 mask。
 4. 用户选择修复引擎：
-   - `fast`：默认，`cv2.inpaint`，无需模型。
-   - `ai`：可选，OpenCV DNN + LaMa ONNX，更擅长恢复纹理。
+   - `ai`：默认（模型可用时），OpenCV DNN + LaMa ONNX，更擅长恢复纹理。
+   - `fast`：模型不可用或用户主动选择时使用，`cv2.inpaint`，无需模型。
 5. 前端展示原图、结果和检测区，并支持下载。
 
-产品原则是 **MVP + YAGNI**：单图片、单矩形、无账号、无数据库、无持久化。AI 和桌面打包都是可选增强，不要破坏纯 Web / 快速模式的可用性。
+产品原则是 **MVP + YAGNI**：单图片、单矩形、无账号、无数据库、无持久化。默认体验使用 AI 精修；模型不可用时自动回退快速模式，不能破坏纯 Web / 快速模式的可用性。
 
 ## 技术栈
 
@@ -148,13 +148,14 @@ oma-watermark-desktop
 6. **AI 模型是可选资源**。开发模式下默认 `models/inpainting_lama_2025jan.onnx`，`OMA_LAMA_MODEL` 可覆盖；冻结模式下默认读取 `sys._MEIPASS/models/...`。
 7. **AI 模型懒加载并串行推理**，`lama.py` 用锁保护模型加载和 `cv2.dnn` 推理。
 8. **AI 只贴回 mask 内像素**，mask 外必须保持原图。
-9. **快速模式必须是默认路径**，模型缺失时 Web 和桌面仍可正常使用。
+9. **默认模式是 AI**：UI 在健康检查通过后默认选择 `ai`，API 默认也是 `ai`；模型缺失时 UI 自动回退 `fast`，Web 和桌面仍可正常使用。用户手动切换后（`modeTouched`）不要被异步健康检查覆盖。
 10. **CSS 不手改 `app.built.css`**。修改 `app.css`、`index.html`、`style.css` 后运行 `npm run build:css`，并提交生成文件。
 11. **Apple 主题通过 daisyUI theme plugin 定义**：`apple` 为默认浅色，`apple-dark` 为 `prefersdark`。不要退回 CDN 或 Tailwind browser 运行时。
 12. **桌面模式用 `?desktop=1` 标记**，`html[data-desktop="true"]` 隐藏 `#appHeader`，使用原生标题栏。
-13. **冻结资源路径**：`app.py` 的 `_static_dir()` 和 `lama.py` 的 `_default_model_path()` 负责 PyInstaller 的 `_MEIPASS` 路径，修改时必须在打包后验证。
-14. **桌面下载**：pywebview 必须设置 `webview.settings["ALLOW_DOWNLOADS"] = True`，否则下载按钮无效。
-15. **图片在内存中处理**，不落盘、不保存历史、不记录上传内容。
+13. **桌面窗口默认 1240×880，最小 980×780**，通过 `?desktop=1` 隐藏 navbar；桌面模式隐藏页面滚动条，效果提示放在工具栏的「?」帮助弹窗，不占右侧空间。
+14. **冻结资源路径**：`app.py` 的 `_static_dir()` 和 `lama.py` 的 `_default_model_path()` 负责 PyInstaller 的 `_MEIPASS` 路径，修改时必须在打包后验证。
+15. **桌面下载**：pywebview 必须设置 `webview.settings["ALLOW_DOWNLOADS"] = True`，否则下载按钮无效。
+16. **图片在内存中处理**，不落盘、不保存历史、不记录上传内容。
 
 ## 修改指南
 
@@ -185,7 +186,7 @@ multipart/form-data:
   x, y, width, height: int
   threshold: int (default 200)
   expand: int 0-12 (default 6)
-  mode: "fast" | "ai" (default "fast")
+  mode: "ai" | "fast" (default "ai")
 
 200 JSON:
   result, mask_overlay: data URL
@@ -193,7 +194,7 @@ multipart/form-data:
 ```
 
 - 参数或返回结构变化时同步更新 `app.js`、`tests/test_api.py`、`README.md`。
-- 422：参数/ROI 错误；503：模型缺失；500：AI 推理失败。
+- 422：参数/ROI 错误；503：模型缺失（UI 会回退 fast）；500：AI 推理失败。
 - `GET /api/health` 包含 `ai_available` 和 `ai_engine`。
 
 ### 修改桌面 / 打包
@@ -210,7 +211,7 @@ multipart/form-data:
 - 算法修改：正常路径、无水印、ROI 越界、选区过小、ROI 外不变。
 - AI 修改：模型缺失错误；有模型时 LaMa 冒烟测试；无模型时自动 skip。
 - API 修改：成功、非法 ROI、非图片、非法 mode、非法 expand、健康检查。
-- 前端：`node --check`，并做一次 Web + 桌面模式手测。
+- 前端：`node --check`，并做一次 Web + 桌面模式手测，确认默认 AI、帮助弹窗、桌面无右侧滚动条。
 - 主题/样式：`npm run build:css` 后检查浅色/深色和桌面 navbar 隐藏。
 - 打包：启动 `.app`，确认 `/api/health`、静态资源、AI 推理和下载。
 

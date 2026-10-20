@@ -16,6 +16,8 @@
     selectionLabel: document.querySelector("#selectionLabel"),
     drawLayer: document.querySelector("#drawLayer"),
     fileInput: document.querySelector("#fileInput"),
+    helpButton: document.querySelector("#helpButton"),
+    helpDialog: document.querySelector("#helpDialog"),
     replaceButton: document.querySelector("#replaceButton"),
     originalTab: document.querySelector("#originalTab"),
     resultTab: document.querySelector("#resultTab"),
@@ -49,6 +51,7 @@
     loading: false,
     aiAvailable: false,
     aiStatusLoaded: false,
+    modeTouched: false,
     requestId: 0,
   };
 
@@ -90,6 +93,9 @@
       state.aiAvailable = false;
     }
     state.aiStatusLoaded = true;
+    if (!state.modeTouched) {
+      elements.modeSelect.value = state.aiAvailable ? "ai" : "fast";
+    }
     updateAiHint();
     updateControls();
   }
@@ -369,6 +375,18 @@
     elements.fileInput.click();
   });
 
+  elements.helpButton.addEventListener("click", () => {
+    elements.helpDialog.showModal();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "?" || event.metaKey || event.ctrlKey || event.altKey) return;
+    const activeTag = document.activeElement?.tagName;
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) return;
+    event.preventDefault();
+    if (!elements.helpDialog.open) elements.helpDialog.showModal();
+  });
+
   elements.clearSelectionButton.addEventListener("click", () => {
     state.roi = null;
     state.drag = null;
@@ -378,6 +396,7 @@
   });
 
   elements.modeSelect.addEventListener("change", () => {
+    state.modeTouched = true;
     if (elements.modeSelect.value === "ai" && !state.aiAvailable) {
       refreshAiStatus();
     } else {

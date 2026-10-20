@@ -42,6 +42,7 @@ def test_remove_endpoint_returns_images_and_stats() -> None:
             "width": "180",
             "height": "100",
             "threshold": "200",
+            "mode": "fast",
         },
     )
 
@@ -142,7 +143,7 @@ def test_ai_mode_reports_missing_model(monkeypatch, tmp_path) -> None:
 
 
 @pytest.mark.skipif(not model_available(), reason="LaMa model is not downloaded")
-def test_ai_mode_endpoint_succeeds() -> None:
+def test_ai_is_the_default_endpoint_mode() -> None:
     clear_model_cache()
     response = client.post(
         "/api/remove",
@@ -154,7 +155,6 @@ def test_ai_mode_endpoint_succeeds() -> None:
             "height": "100",
             "threshold": "200",
             "expand": "4",
-            "mode": "ai",
         },
     )
 
