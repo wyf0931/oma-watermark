@@ -25,7 +25,7 @@
               <h1 class="text-lg font-semibold tracking-tight">水印清除器</h1>
               <span class="badge badge-ghost badge-sm">MVP</span>
             </div>
-            <p class="text-xs text-base-content/60">框选水印，OpenCV 自动修复</p>
+            <p class="text-xs text-base-content/60">框选水印，OpenCV / LaMa 修复</p>
           </div>
         </div>
         <div class="ml-auto hidden items-center gap-2 text-xs text-base-content/60 sm:flex">
@@ -124,6 +124,15 @@
               </div>
 
               <div>
+                <label for="modeSelect" class="mb-1.5 block text-sm font-medium">修复模式</label>
+                <select id="modeSelect" class="select select-bordered select-sm w-full">
+                  <option value="fast">快速 · OpenCV</option>
+                  <option value="ai">AI 精修 · LaMa</option>
+                </select>
+                <p id="aiHint" class="mt-1.5 text-[11px] leading-4 text-base-content/45">正在检测 AI 模型…</p>
+              </div>
+
+              <div>
                 <div class="mb-1.5 flex items-center justify-between gap-3 text-sm">
                   <label for="thresholdInput" class="font-medium">亮度阈值</label>
                   <output id="thresholdValue" for="thresholdInput" class="font-mono text-xs text-base-content/70">200</output>
@@ -132,6 +141,18 @@
                 <div class="mt-1 flex justify-between text-[11px] text-base-content/45">
                   <span>调低 → 选中更多</span>
                   <span>调高 → 只选亮白</span>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                  <label for="expandInput" class="font-medium">边缘扩展</label>
+                  <output id="expandValue" for="expandInput" class="font-mono text-xs text-base-content/70">6 px</output>
+                </div>
+                <input id="expandInput" type="range" class="range range-sm" min="0" max="12" step="1" value="6" />
+                <div class="mt-1 flex justify-between text-[11px] text-base-content/45">
+                  <span>更小 → 更清晰</span>
+                  <span>更大 → 更彻底</span>
                 </div>
               </div>
 
@@ -159,6 +180,7 @@
               <li>选区越贴近水印，修复效果越好。</li>
               <li>白色水印没清干净时，调低阈值再处理。</li>
               <li>“检测区”可查看本次被修复的红色像素。</li>
+              <li>AI 精修更擅长恢复纹理；首次使用需先下载模型。</li>
             </ul>
           </section>
         </aside>

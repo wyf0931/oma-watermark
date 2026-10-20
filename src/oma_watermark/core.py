@@ -9,11 +9,14 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
+from .lama import inpaint_with_lama
+
 MAX_IMAGE_PIXELS = 30_000_000
 DEFAULT_THRESHOLD = 200
-DEFAULT_DILATION = 6
+DEFAULT_EXPAND = 6
 INPAINT_RADIUS = 5
 MIN_ROI_SIZE = 4
+ENGINES = {"fast", "ai"}
 
 # Fail early on decompression bombs before allocating an oversized array.
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
@@ -53,6 +56,7 @@ class RemovalResult:
     mask: np.ndarray
     mask_overlay: np.ndarray
     masked_pixels: int
+    engine: str = "fast"
 
 
 def decode_image(data: bytes) -> tuple[np.ndarray, str | None]:
@@ -83,12 +87,16 @@ def decode_image(data: bytes) -> tuple[np.ndarray, str | None]:
     return bgr, source_format
 
 
-def encode_image(image: np.ndarray, source_format: str | None = None) -> tuple[bytes, str, str]:
+def encode_image(
+    image: np.ndarray, source_format: str | None = None
+) -> tuple[bytes, str, str]:
     """Encode an image as JPEG when possible, otherwise PNG."""
     is_jpeg = source_format in {"JPEG", "MPO"}
     extension = ".jpg" if is_jpeg else ".png"
     mime_type = "image/jpeg" if is_jpeg else "image/png"
-    params = [cv2.IMWRITE_JPEG_QUALITY, 95] if is_jpeg else [cv2.IMWRITE_PNG_COMPRESSION, 3]
+    params = (
+        [cv2.IMWRITE_JPEG_QUALITY, 95] if is_jpeg else [cv2.IMWRITE_PNG_COMPRESSION, 3]
+    )
     ok, buffer = cv2.imencode(extension, image, params)
     if not ok:
         raise RuntimeError("图片编码失败")
@@ -99,13 +107,13 @@ def build_mask(
     image: np.ndarray,
     roi: Roi,
     threshold: int = DEFAULT_THRESHOLD,
-    dilation: int = DEFAULT_DILATION,
+    expand: int = DEFAULT_EXPAND,
 ) -> tuple[np.ndarray, np.ndarray, int]:
     """Select near-white pixels inside the ROI and return a full-size mask."""
     if not 0 <= threshold <= 255:
         raise ValueError("亮度阈值必须在 0 到 255 之间")
-    if dilation < 0:
-        raise ValueError("膨胀次数不能为负数")
+    if not 0 <= expand <= 12:
+        raise ValueError("边缘扩展必须在 0 到 12 之间")
 
     height, width = image.shape[:2]
     roi.validate(width, height)
@@ -114,10 +122,10 @@ def build_mask(
     lower = np.array([threshold, threshold, threshold], dtype=np.uint8)
     mask_crop = cv2.inRange(crop, lower, np.array([255, 255, 255], dtype=np.uint8))
 
-    if dilation:
+    if expand:
         # Grow past anti-aliased edges and the usual subtle text shadow.
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        mask_crop = cv2.dilate(mask_crop, kernel, iterations=dilation)
+        mask_crop = cv2.dilate(mask_crop, kernel, iterations=expand)
 
     masked_pixels = int(cv2.countNonZero(mask_crop))
     if masked_pixels == 0:
@@ -141,14 +149,23 @@ def remove_watermark(
     image: np.ndarray,
     roi: Roi,
     threshold: int = DEFAULT_THRESHOLD,
-    dilation: int = DEFAULT_DILATION,
+    expand: int = DEFAULT_EXPAND,
+    engine: str = "fast",
 ) -> RemovalResult:
-    """Inpaint bright watermark pixels inside the selected region."""
-    mask, _, masked_pixels = build_mask(image, roi, threshold, dilation)
-    cleaned = cv2.inpaint(image, mask, INPAINT_RADIUS, cv2.INPAINT_TELEA)
+    """Remove bright watermark pixels with OpenCV or the optional LaMa model."""
+    if engine not in ENGINES:
+        raise ValueError("修复模式必须是 fast 或 ai")
+
+    mask, _, masked_pixels = build_mask(image, roi, threshold, expand)
+    if engine == "ai":
+        cleaned = inpaint_with_lama(image, mask)
+    else:
+        cleaned = cv2.inpaint(image, mask, INPAINT_RADIUS, cv2.INPAINT_TELEA)
+
     return RemovalResult(
         image=cleaned,
         mask=mask,
         mask_overlay=make_mask_overlay(image, mask),
         masked_pixels=masked_pixels,
+        engine=engine,
     )

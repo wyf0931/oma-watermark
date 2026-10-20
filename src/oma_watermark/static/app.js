@@ -22,8 +22,12 @@
     maskTab: document.querySelector("#maskTab"),
     roiText: document.querySelector("#roiText"),
     clearSelectionButton: document.querySelector("#clearSelectionButton"),
+    modeSelect: document.querySelector("#modeSelect"),
+    aiHint: document.querySelector("#aiHint"),
     thresholdInput: document.querySelector("#thresholdInput"),
     thresholdValue: document.querySelector("#thresholdValue"),
+    expandInput: document.querySelector("#expandInput"),
+    expandValue: document.querySelector("#expandValue"),
     processButton: document.querySelector("#processButton"),
     processSpinner: document.querySelector("#processSpinner"),
     processLabel: document.querySelector("#processLabel"),
@@ -43,6 +47,8 @@
     view: "original",
     drag: null,
     loading: false,
+    aiAvailable: false,
+    aiStatusLoaded: false,
     requestId: 0,
   };
 
@@ -60,6 +66,32 @@
 
   function hideStatus() {
     elements.status.hidden = true;
+  }
+
+  function updateAiHint() {
+    if (!state.aiStatusLoaded) {
+      elements.aiHint.textContent = "正在检测 AI 模型…";
+    } else if (state.aiAvailable) {
+      elements.aiHint.textContent = "AI 模型已就绪，首次推理会稍慢。";
+    } else if (elements.modeSelect.value === "ai") {
+      elements.aiHint.textContent =
+        "未找到 AI 模型。请运行 uv run oma-watermark-download-model。";
+    } else {
+      elements.aiHint.textContent = "AI 精修可选，首次使用需下载约 93 MB 模型。";
+    }
+  }
+
+  async function refreshAiStatus() {
+    try {
+      const response = await fetch("/api/health");
+      const payload = await response.json();
+      state.aiAvailable = Boolean(payload.ai_available);
+    } catch {
+      state.aiAvailable = false;
+    }
+    state.aiStatusLoaded = true;
+    updateAiHint();
+    updateControls();
   }
 
   function setTabEnabled(tab, enabled) {
@@ -126,19 +158,30 @@
       state.roi.width >= MIN_ROI_SIZE &&
       state.roi.height >= MIN_ROI_SIZE;
 
-    elements.processButton.disabled = state.loading || !state.file || !hasRoi;
+    const aiUnavailable =
+      elements.modeSelect.value === "ai" &&
+      state.aiStatusLoaded &&
+      !state.aiAvailable;
+
+    elements.processButton.disabled =
+      state.loading || !state.file || !hasRoi || aiUnavailable;
     elements.clearSelectionButton.disabled = state.loading || !hasRoi;
     elements.replaceButton.disabled = state.loading || !state.file;
     elements.fileInput.disabled = state.loading;
+    elements.modeSelect.disabled = state.loading;
     elements.thresholdInput.disabled = state.loading;
+    elements.expandInput.disabled = state.loading;
     elements.thresholdValue.value = elements.thresholdInput.value;
     elements.thresholdValue.textContent = elements.thresholdInput.value;
+    elements.expandValue.value = elements.expandInput.value;
+    elements.expandValue.textContent = `${elements.expandInput.value} px`;
     elements.processSpinner.hidden = !state.loading;
-    elements.processLabel.textContent = state.loading
-      ? "正在修复…"
-      : state.resultUrl
-        ? "重新处理"
-        : "祛除水印";
+    let processLabel = state.resultUrl ? "重新处理" : "祛除水印";
+    if (state.loading) {
+      processLabel = elements.modeSelect.value === "ai" ? "AI 精修中…" : "正在修复…";
+    }
+    elements.processLabel.textContent = processLabel;
+    updateAiHint();
 
     elements.roiText.textContent = hasRoi
       ? `${state.roi.x}, ${state.roi.y} · ${state.roi.width} × ${state.roi.height}`
@@ -334,10 +377,29 @@
     updateControls();
   });
 
+  elements.modeSelect.addEventListener("change", () => {
+    if (elements.modeSelect.value === "ai" && !state.aiAvailable) {
+      refreshAiStatus();
+    } else {
+      updateAiHint();
+      updateControls();
+    }
+    if (state.resultUrl) {
+      showStatus("修复模式已切换，点击“重新处理”查看新结果。", "info");
+    }
+  });
+
   elements.thresholdInput.addEventListener("input", () => {
     elements.thresholdValue.textContent = elements.thresholdInput.value;
     if (state.resultUrl) {
       showStatus("阈值已调整，点击“重新处理”查看新结果。", "info");
+    }
+  });
+
+  elements.expandInput.addEventListener("input", () => {
+    elements.expandValue.textContent = `${elements.expandInput.value} px`;
+    if (state.resultUrl) {
+      showStatus("边缘扩展已调整，点击“重新处理”查看新结果。", "info");
     }
   });
 
@@ -352,6 +414,8 @@
     formData.append("width", String(state.roi.width));
     formData.append("height", String(state.roi.height));
     formData.append("threshold", elements.thresholdInput.value);
+    formData.append("expand", elements.expandInput.value);
+    formData.append("mode", elements.modeSelect.value);
 
     state.loading = true;
     updateControls();
@@ -382,8 +446,9 @@
       elements.downloadLink.download = state.resultFilename;
       elements.downloadLink.hidden = false;
       setView("result");
+      const prefix = payload.mode === "ai" ? "AI 精修完成" : "完成";
       showStatus(
-        `完成：检测并修复了 ${Number(payload.detected_pixels).toLocaleString("zh-CN")} 个水印像素。`,
+        `${prefix}：检测并修复了 ${Number(payload.detected_pixels).toLocaleString("zh-CN")} 个水印像素。`,
         "success",
       );
     } catch (error) {
@@ -429,5 +494,6 @@
     if (state.originalUrl) URL.revokeObjectURL(state.originalUrl);
   });
 
+  refreshAiStatus();
   updateControls();
 })();

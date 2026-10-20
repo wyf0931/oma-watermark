@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .core import (
+    DEFAULT_EXPAND,
     DEFAULT_THRESHOLD,
     InvalidImageError,
     InvalidRoiError,
@@ -19,6 +20,7 @@ from .core import (
     encode_image,
     remove_watermark,
 )
+from .lama import AIInpaintingError, AIModelUnavailableError, model_available
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -38,8 +40,12 @@ def index() -> FileResponse:
 
 
 @app.get("/api/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, object]:
+    return {
+        "status": "ok",
+        "ai_available": model_available(),
+        "ai_engine": "LaMa 512 (OpenCV DNN)",
+    }
 
 
 @app.post("/api/remove")
@@ -50,7 +56,12 @@ def remove(
     width: int = Form(...),
     height: int = Form(...),
     threshold: int = Form(DEFAULT_THRESHOLD),
+    expand: int = Form(DEFAULT_EXPAND),
+    mode: str = Form("fast"),
 ) -> dict[str, object]:
+    if mode not in {"fast", "ai"}:
+        raise HTTPException(status_code=422, detail="修复模式必须是 fast 或 ai")
+
     data = file.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="图片不能超过 25 MB")
@@ -58,9 +69,19 @@ def remove(
     try:
         image, source_format = decode_image(data)
         roi = Roi(x=x, y=y, width=width, height=height)
-        result = remove_watermark(image, roi, threshold=threshold)
+        result = remove_watermark(
+            image,
+            roi,
+            threshold=threshold,
+            expand=expand,
+            engine=mode,
+        )
     except (InvalidImageError, InvalidRoiError, NoWatermarkDetectedError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except AIModelUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AIInpaintingError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -76,6 +97,8 @@ def remove(
         "width": width_px,
         "height": height_px,
         "detected_pixels": result.masked_pixels,
+        "mode": result.engine,
+        "expand": expand,
         "roi": {
             "x": roi.x,
             "y": roi.y,
