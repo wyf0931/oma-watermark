@@ -20,7 +20,13 @@ dependencies = [
 
 [project.scripts]
 oma-watermark = "oma_watermark:main"
+oma-watermark-desktop = "oma_watermark.desktop:main"
 oma-watermark-download-model = "oma_watermark.download_model:main"
+
+[project.optional-dependencies]
+desktop = [
+    "pywebview>=5.4",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.8,<0.13.0"]
@@ -29,6 +35,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "pyinstaller>=6.22.3",
     "pytest>=9.1.1",
 ]
 

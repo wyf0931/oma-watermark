@@ -1,12 +1,14 @@
-# 水印清除器（MVP）
+# 水印清除器
 
-一个本地运行的 Web 小工具：上传图片，用鼠标框出水印所在区域，自动识别浅色水印像素，再选择快速 OpenCV 修复或可选的 LaMa AI 精修。
+一个本地运行的 Web 小工具和 macOS 桌面应用：上传图片，用鼠标框出水印区域，自动识别浅色水印像素，再选择快速 OpenCV 修复或可选的 LaMa AI 精修。
 
-不依赖桌面 GUI，macOS / Linux 都能跑；图片只发送到本机 FastAPI 服务。
+图片只发送到本机服务，不经过第三方。Web 版和桌面版共用同一套 FastAPI + HTML/CSS/JS 界面。
 
-![水印清除器界面：AI 精修后的图片结果](docs/screenshot.png)
+![水印清除器 macOS 桌面模式：AI 精修后的图片结果](docs/screenshot.png)
 
-## 快速开始
+*macOS 桌面模式。原生窗口标题栏由 macOS 提供，不包含在网页截图中。*
+
+## Web 版
 
 需要 Python 3.12+ 和 [uv](https://docs.astral.sh/uv/)。
 
@@ -25,7 +27,7 @@ uv run oma-watermark
 uv run oma-watermark-download-model
 ```
 
-下载命令使用项目依赖中的 Hugging Face CLI（`uv sync` 已安装）。如果 Hugging Face 无法访问，先设置代理再运行下载命令：
+下载命令使用项目依赖中的 Hugging Face CLI（`uv sync` 已安装）。如果 Hugging Face 无法访问，先设置代理再运行：
 
 ```bash
 export https_proxy=http://127.0.0.1:7897
@@ -40,13 +42,76 @@ uv run oma-watermark-download-model
 uv run hf download opencv/inpainting_lama inpainting_lama_2025jan.onnx --local-dir models
 ```
 
-默认模型路径是 `models/inpainting_lama_2025jan.onnx`。如需放到别处：
+默认路径是 `models/inpainting_lama_2025jan.onnx`。如需放到别处：
 
 ```bash
 OMA_LAMA_MODEL=/path/to/inpainting_lama_2025jan.onnx uv run oma-watermark
 ```
 
 模型文件不提交到仓库，`models/` 已加入 `.gitignore`。模型采用 Apache-2.0 许可。
+
+## macOS 桌面应用
+
+桌面版使用 [pywebview](https://pywebview.flowrl.com/) 的 WKWebView + pywebview 原生窗口，后端仍是本机 FastAPI；通过 PyInstaller 打包为 `.app`，再生成 DMG。
+
+### 直接安装
+
+从 GitHub Releases 下载 `Watermark-Remover-*.dmg`，打开后把「水印清除器」拖入 Applications。
+
+DMG 内置 LaMa 模型，AI 模式可离线使用。当前构建是 **ad-hoc 签名、未公证**，首次打开可能需要：
+
+- 右键 App →「打开」；或
+- `xattr -dr com.apple.quarantine "/Applications/Watermark Remover.app"`
+
+正式分发建议配置 Apple Developer ID 证书和 notarization。
+
+### 本地运行桌面模式
+
+```bash
+npm ci
+npm run build:css
+uv sync --extra desktop
+uv run oma-watermark-desktop
+```
+
+桌面模式会隐藏网页顶部的 navbar，改用 macOS 原生窗口标题栏。界面仍是响应式的，窗口最小尺寸约 980×700。
+
+### 本地构建 DMG
+
+```bash
+bash packaging/build_macos.sh
+```
+
+构建脚本会：
+
+1. 检查并下载 LaMa 模型；
+2. 构建本地 Tailwind/daisyUI CSS；
+3. 使用 PyInstaller 生成 `Watermark Remover.app`；
+4. ad-hoc 签名；
+5. 生成带 Applications 快捷方式的 `dist/Watermark-Remover-<version>-<arch>.dmg`。
+
+可通过 `OMA_APP_VERSION=0.2.0` 指定版本号。
+
+### GitHub Actions
+
+[`.github/workflows/build-desktop.yml`](.github/workflows/build-desktop.yml) 支持：
+
+- 手动触发 `workflow_dispatch`
+- 推送 `v*` tag 时自动构建并创建 GitHub Release
+- macOS `macos-14`（Apple Silicon arm64）生成 DMG
+- Windows `windows-latest` 生成 ZIP（可选，失败不阻塞 macOS 构建）
+- 缓存 LaMa 模型，避免每次重复下载
+
+## Windows（可选）
+
+```powershell
+npm ci
+npm run build:css
+uv sync --extra desktop
+powershell -ExecutionPolicy Bypass -File packaging/build_windows.ps1
+```
+
+产物为 `dist/Watermark-Remover-<version>-windows.zip`。Windows 版使用 WebView2，Windows 10/11 通常已预装；没有安装时需安装 Microsoft Edge WebView2 Runtime。
 
 ## 使用步骤
 
@@ -65,7 +130,7 @@ OMA_LAMA_MODEL=/path/to/inpainting_lama_2025jan.onnx uv run oma-watermark
 
 ## 实现方式
 
-1. 浏览器把原图、ROI、阈值、扩展值和修复模式发送到 `POST /api/remove`。
+1. 前端把原图、ROI、阈值、扩展值和模式发送到 `POST /api/remove`。
 2. 服务端在 ROI 内用 `cv2.inRange` 选中所有通道亮度都高于阈值的像素。
 3. 按「边缘扩展」对 mask 做形态学膨胀。
 4. 根据模式修复：
@@ -73,7 +138,27 @@ OMA_LAMA_MODEL=/path/to/inpainting_lama_2025jan.onnx uv run oma-watermark
    - **AI**：裁出 mask 周围的正方形区域，缩放至 512×512，通过 OpenCV DNN 跑 LaMa，再把 mask 内的像素贴回原图。
 5. 返回结果图、红色检测区预览和修复像素数。
 
-核心代码在 [`src/oma_watermark/core.py`](src/oma_watermark/core.py) 和 [`src/oma_watermark/lama.py`](src/oma_watermark/lama.py)，Web UI 在 [`src/oma_watermark/static/`](src/oma_watermark/static/)。
+核心代码：
+
+- [`src/oma_watermark/core.py`](src/oma_watermark/core.py)：mask 与快速修复
+- [`src/oma_watermark/lama.py`](src/oma_watermark/lama.py)：LaMa 模型与 AI 推理
+- [`src/oma_watermark/app.py`](src/oma_watermark/app.py)：FastAPI 与静态资源
+- [`src/oma_watermark/desktop.py`](src/oma_watermark/desktop.py)：桌面窗口与本地服务生命周期
+- [`src/oma_watermark/static/`](src/oma_watermark/static/)：Web UI
+- [`packaging/`](packaging/)：PyInstaller spec、图标与 DMG/Windows 构建脚本
+
+## UI 与 Apple 主题
+
+- 使用 [`DESIGN.md`](DESIGN.md) 中的 Apple 设计语言：Action Blue、Parchment 背景、18px 卡片圆角、胶囊按钮、细描边、无装饰阴影。
+- daisyUI 主题沉淀在 [`src/oma_watermark/static/app.css`](src/oma_watermark/static/app.css)，通过 `@plugin "daisyui/theme"` 定义 `apple` 和 `apple-dark`，跟随系统浅色/深色模式。
+- 修改 UI 后重新生成 CSS：
+
+```bash
+npm run build:css
+```
+
+- 生成的文件是 `src/oma_watermark/static/app.built.css`。应用不再依赖 daisyUI CDN，可完全离线运行。
+- 桌面模式通过 `?desktop=1` 隐藏网页 navbar，使用原生标题栏。
 
 ## 测试
 
@@ -90,7 +175,8 @@ uv run pytest
 - 快速模式是扩散式内容填充，修复区域会变平滑，复杂纹理上尤其明显。
 - AI 模式受 512×512 模型输入限制；大选区会被缩放，结果可能更柔和，也可能会“脑补”背景。
 - 透明 PNG 会先合成到白底，输出不保留 alpha。
-- 页面样式使用 daisyUI CDN，首次打开需要联网；图片处理本身不联网。
+- macOS DMG 为 ad-hoc 签名、未公证；正式分发需要 Developer ID。
+- Windows 构建为 ZIP，不是安装器；依赖 WebView2。
 - 图片在内存中处理，不落盘、不保存历史。
 
 ## API

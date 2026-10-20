@@ -6,6 +6,7 @@ The model is downloaded separately, so OpenCV-only installs keep the fast path.
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 
@@ -28,9 +29,15 @@ class AIInpaintingError(RuntimeError):
     """The model is loaded but inference failed."""
 
 
+def _default_model_path() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", Path.cwd())) / "models" / MODEL_FILENAME
+    return DEFAULT_MODEL_PATH
+
+
 def model_path() -> Path:
     configured = os.environ.get("OMA_LAMA_MODEL")
-    return Path(configured).expanduser() if configured else DEFAULT_MODEL_PATH
+    return Path(configured).expanduser() if configured else _default_model_path()
 
 
 def model_available() -> bool:

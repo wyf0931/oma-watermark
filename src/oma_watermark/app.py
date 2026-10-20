@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -23,7 +24,15 @@ from .core import (
 from .lama import AIInpaintingError, AIModelUnavailableError, model_available
 
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
+
+
+def _static_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", BASE_DIR)) / "oma_watermark" / "static"
+    return BASE_DIR / "static"
+
+
+STATIC_DIR = _static_dir()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 app = FastAPI(title="水印清除器", version="0.1.0")

@@ -4,15 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="在浏览器中框选水印区域，用 OpenCV 在本机自动修复图片。" />
+    <meta name="description" content="在本机框选水印区域，用 OpenCV 或 LaMa 自动修复图片。" />
     <title>水印清除器</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236d4aff'/%3E%3Cpath d='M50 18 57 43 82 50 57 57 50 82 43 57 18 50 43 43Z' fill='white'/%3E%3C/svg%3E" />
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230066cc'/%3E%3Cpath d='M50 18 57 43 82 50 57 57 50 82 43 57 18 50 43 43Z' fill='white'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/static/app.built.css" />
     <link rel="stylesheet" href="/static/style.css" />
+    <script>
+      if (new URLSearchParams(window.location.search).get("desktop") === "1") {
+        document.documentElement.dataset.desktop = "true";
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-base-200">
-    <header class="border-b border-base-300 bg-base-100">
+    <header id="appHeader" class="sticky top-0 z-20 border-b border-base-300 bg-base-100/80 backdrop-blur-xl">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-4 sm:px-6">
         <div class="flex items-center gap-3">
           <div class="grid size-10 place-items-center rounded-box bg-primary text-primary-content">
@@ -22,7 +26,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h1 class="text-lg font-semibold tracking-tight">水印清除器</h1>
+              <h1 class="text-[21px] font-semibold leading-tight tracking-tight">水印清除器</h1>
               <span class="badge badge-ghost badge-sm">MVP</span>
             </div>
             <p class="text-xs text-base-content/60">框选水印，OpenCV / LaMa 修复</p>
@@ -37,7 +41,7 @@
 
     <main class="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
       <div class="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section class="card overflow-hidden border border-base-300 bg-base-100 shadow-sm">
+        <section class="card overflow-hidden border border-base-300 bg-base-100">
           <div class="flex min-h-14 items-center justify-between gap-3 border-b border-base-300 px-4 py-2.5">
             <div role="tablist" class="tabs tabs-box tabs-sm" aria-label="图片预览">
               <input id="originalTab" type="radio" name="preview-view" class="tab" value="original" aria-label="原图" checked />
@@ -92,12 +96,12 @@
         </section>
 
         <aside class="flex flex-col gap-4">
-          <section class="card border border-base-300 bg-base-100 shadow-sm">
+          <section class="card border border-base-300 bg-base-100">
             <div class="card-body gap-4 p-4">
               <div class="flex items-start gap-3">
                 <span class="step-number">1</span>
                 <div class="min-w-0">
-                  <h2 class="card-title text-sm">框选水印</h2>
+                  <h2 class="card-title text-[17px] leading-tight">框选水印</h2>
                   <p class="mt-1 text-xs leading-5 text-base-content/60">在图片上拖动鼠标，框出一个包含水印的矩形区域。</p>
                 </div>
               </div>
@@ -113,12 +117,12 @@
             </div>
           </section>
 
-          <section class="card border border-base-300 bg-base-100 shadow-sm">
+          <section class="card border border-base-300 bg-base-100">
             <div class="card-body gap-4 p-4">
               <div class="flex items-start gap-3">
                 <span class="step-number">2</span>
                 <div>
-                  <h2 class="card-title text-sm">检测与修复</h2>
+                  <h2 class="card-title text-[17px] leading-tight">检测与修复</h2>
                   <p class="mt-1 text-xs leading-5 text-base-content/60">自动选中选区里的浅色水印像素，再进行内容修复。</p>
                 </div>
               </div>
@@ -137,7 +141,7 @@
                   <label for="thresholdInput" class="font-medium">亮度阈值</label>
                   <output id="thresholdValue" for="thresholdInput" class="font-mono text-xs text-base-content/70">200</output>
                 </div>
-                <input id="thresholdInput" type="range" class="range range-sm" min="120" max="250" step="5" value="200" />
+                <input id="thresholdInput" type="range" class="range range-primary range-sm" min="120" max="250" step="5" value="200" />
                 <div class="mt-1 flex justify-between text-[11px] text-base-content/45">
                   <span>调低 → 选中更多</span>
                   <span>调高 → 只选亮白</span>
@@ -149,7 +153,7 @@
                   <label for="expandInput" class="font-medium">边缘扩展</label>
                   <output id="expandValue" for="expandInput" class="font-mono text-xs text-base-content/70">6 px</output>
                 </div>
-                <input id="expandInput" type="range" class="range range-sm" min="0" max="12" step="1" value="6" />
+                <input id="expandInput" type="range" class="range range-primary range-sm" min="0" max="12" step="1" value="6" />
                 <div class="mt-1 flex justify-between text-[11px] text-base-content/45">
                   <span>更小 → 更清晰</span>
                   <span>更大 → 更彻底</span>
@@ -181,6 +185,7 @@
               <li>白色水印没清干净时，调低阈值再处理。</li>
               <li>“检测区”可查看本次被修复的红色像素。</li>
               <li>AI 精修更擅长恢复纹理；首次使用需先下载模型。</li>
+              <li>图片只在本机处理，不经过第三方服务。</li>
             </ul>
           </section>
         </aside>

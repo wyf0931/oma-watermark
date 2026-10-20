@@ -1,0 +1,107 @@
+name: Build desktop apps
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS DMG
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Cache LaMa model
+        uses: actions/cache@v6
+        with:
+          path: models
+          key: lama-model-2025jan-v1
+
+      - name: Install Python dependencies
+        run: uv sync --extra desktop
+
+      - name: Download LaMa model
+        run: uv run oma-watermark-download-model
+
+      - name: Build DMG
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.1.0"
+          fi
+          OMA_APP_VERSION="$VERSION" bash packaging/build_macos.sh
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-dmg
+          path: dist/*.dmg
+
+  windows:
+    name: Windows ZIP (optional)
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Cache LaMa model
+        uses: actions/cache@v6
+        with:
+          path: models
+          key: lama-model-2025jan-v1
+
+      - name: Install Python dependencies
+        run: uv sync --extra desktop
+
+      - name: Download LaMa model
+        run: uv run oma-watermark-download-model
+
+      - name: Build ZIP
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like "refs/tags/v*") {
+            $env:OMA_APP_VERSION = $env:GITHUB_REF_NAME.Substring(1)
+          } else {
+            $env:OMA_APP_VERSION = "0.1.0"
+          }
+          ./packaging/build_windows.ps1
+
+      - name: Upload Windows ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-zip
+          path: dist/*.zip
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: macos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: macos-*
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*.dmg
+          generate_release_notes: true

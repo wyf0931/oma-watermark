@@ -1,12 +1,33 @@
 /* Custom drawing surface only; components use daisyUI + Tailwind. */
 body {
   font-family:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 [hidden] {
   display: none !important;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+html[data-desktop="true"] #appHeader {
+  display: none;
+}
+
+html[data-desktop="true"] main {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+html[data-desktop="true"] .stage {
+  max-height: 62vh;
+}
+
+html[data-desktop="true"] .image-wrap img {
+  max-height: 62vh;
 }
 
 .dropzone {
@@ -35,6 +56,7 @@ body {
   max-width: 100%;
   overflow: hidden;
   border-radius: var(--radius-box);
+  box-shadow: rgb(0 0 0 / 22%) 3px 5px 30px 0;
   line-height: 0;
   user-select: none;
   -webkit-user-select: none;
@@ -64,8 +86,8 @@ body {
 .selection-box {
   position: absolute;
   z-index: 3;
-  border: 2px solid #bef264;
-  background: rgb(190 242 100 / 12%);
+  border: 2px solid var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
   box-shadow: 0 0 0 9999px rgb(0 0 0 / 45%);
   pointer-events: none;
 }
@@ -75,8 +97,9 @@ body {
   top: 4px;
   left: 4px;
   padding: 2px 5px;
-  border-radius: 4px;
-  background: rgb(0 0 0 / 68%);
+  border-radius: 5px;
+  background: rgb(0 0 0 / 62%);
+  backdrop-filter: blur(12px);
   color: #fff;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
@@ -104,5 +127,15 @@ body {
 
   .image-wrap img {
     max-height: 55vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
