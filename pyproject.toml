@@ -1,0 +1,33 @@
+[project]
+name = "oma-watermark"
+version = "0.1.0"
+description = "A local web tool for removing light watermarks from an image with OpenCV inpainting"
+readme = "README.md"
+authors = [
+    { name = "Scott", email = "yunfei0931@foxmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.153.0",
+    "numpy>=2.5.4",
+    "opencv-python-headless>=5.0.0.93",
+    "pillow>=13.0.0",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+oma-watermark = "oma_watermark:main"
+
+[build-system]
+requires = ["uv_build>=0.12.8,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

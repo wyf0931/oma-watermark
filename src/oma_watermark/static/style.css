@@ -1,0 +1,108 @@
+/* Custom drawing surface only; components use daisyUI + Tailwind. */
+body {
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.dropzone {
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.dropzone.is-dragging {
+  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-base-100));
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.stage {
+  display: flex;
+  min-height: 18rem;
+  max-height: 68vh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-box);
+  line-height: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.image-wrap img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 68vh;
+}
+
+.draw-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.image-wrap[data-view="result"] .draw-layer,
+.image-wrap[data-view="mask"] .draw-layer {
+  display: none;
+}
+
+.selection-box {
+  position: absolute;
+  z-index: 3;
+  border: 2px solid #bef264;
+  background: rgb(190 242 100 / 12%);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+
+.selection-label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 68%);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.step-number {
+  display: grid;
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .stage {
+    max-height: 55vh;
+  }
+
+  .image-wrap img {
+    max-height: 55vh;
+  }
+}
