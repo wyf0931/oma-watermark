@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import suppress
 from pathlib import Path
 
 from .lama import DEFAULT_MODEL_PATH, MIN_MODEL_BYTES, MODEL_FILENAME, MODEL_REPO
@@ -20,7 +21,17 @@ def _is_ready(path: Path) -> bool:
         return False
 
 
+def _configure_output_encoding() -> None:
+    # Windows consoles often default to cp1252; Chinese status text would crash.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            with suppress(OSError):
+                reconfigure(encoding="utf-8")
+
+
 def main() -> None:
+    _configure_output_encoding()
     parser = argparse.ArgumentParser(description="下载可选的 LaMa 水印修复模型")
     parser.add_argument(
         "--output",
@@ -92,7 +103,7 @@ def main() -> None:
 
     print(f"Model ready: {target}")
     print("Start the app with: uv run oma-watermark")
-    print("Then choose “AI 精修 · LaMa” in the UI.")
+    print("Then choose the AI mode in the UI.")
 
 
 if __name__ == "__main__":
