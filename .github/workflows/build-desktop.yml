@@ -14,14 +14,14 @@ jobs:
     name: macOS DMG
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
 
       - name: Cache LaMa model
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: models
           key: lama-model-2025jan-v1
@@ -43,7 +43,7 @@ jobs:
           OMA_APP_VERSION="$VERSION" bash packaging/build_macos.sh
 
       - name: Upload DMG
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: macos-dmg
           path: dist/*.dmg
@@ -53,14 +53,14 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
 
       - name: Cache LaMa model
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: models
           key: lama-model-2025jan-v1
@@ -82,7 +82,7 @@ jobs:
           ./packaging/build_windows.ps1
 
       - name: Upload Windows ZIP
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: windows-zip
           path: dist/*.zip
@@ -95,13 +95,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.2
         with:
           path: artifacts
           pattern: macos-*
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@v3.0.3
         with:
           files: artifacts/*.dmg
           generate_release_notes: true
