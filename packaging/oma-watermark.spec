@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 ROOT = Path(SPECPATH).resolve().parent
 APP_NAME = "Watermark Remover"
-VERSION = os.environ.get("OMA_APP_VERSION", "0.1.1")
+VERSION = os.environ.get("OMA_APP_VERSION", "0.1.2")
 
 datas = [
     (str(ROOT / "src" / "oma_watermark" / "static"), "oma_watermark/static"),

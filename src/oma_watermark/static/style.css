@@ -1,4 +1,4 @@
-/* Custom drawing surface only; components use daisyUI + Tailwind. */
+/* Custom surfaces only; components use daisyUI + Tailwind. */
 body {
   font-family:
     var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -13,60 +13,125 @@ body {
   transform: scale(0.97);
 }
 
-html[data-desktop="true"] #appHeader {
-  display: none;
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 1440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 16px 24px 20px;
 }
 
-html[data-desktop="true"] main {
-  padding-top: 1.5rem;
-  padding-bottom: 2rem;
+.top-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-base-300);
 }
 
-/* The native shell should feel like a window, not a scrolling web page. */
-html[data-desktop="true"],
-html[data-desktop="true"] body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  overscroll-behavior: none;
+.app-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
-html[data-desktop="true"]::-webkit-scrollbar,
-html[data-desktop="true"] body::-webkit-scrollbar {
-  display: none;
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-html[data-desktop="true"] .stage {
-  max-height: 62vh;
+.workspace {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-html[data-desktop="true"] .image-wrap img {
-  max-height: 62vh;
+.preview-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
 }
 
-.dropzone {
-  transition:
-    background-color 150ms ease,
-    box-shadow 150ms ease;
+.panel-header {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-base-300);
 }
 
-.dropzone.is-dragging {
+.panel-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.preview-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.preview-panel.is-dragging .preview-stage {
   background: color-mix(in oklab, var(--color-primary) 7%, var(--color-base-100));
   box-shadow: inset 0 0 0 2px var(--color-primary);
 }
 
-.stage {
+.empty-state {
   display: flex;
-  min-height: 18rem;
-  max-height: 68vh;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  text-align: center;
+}
+
+.empty-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 18px;
+  background: var(--color-base-200);
+  color: color-mix(in oklab, var(--color-base-content) 35%, transparent);
+}
+
+#editor {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .image-wrap {
   position: relative;
   display: inline-block;
   max-width: 100%;
+  max-height: max(240px, calc(100vh - 310px));
   overflow: hidden;
   border-radius: var(--radius-box);
   box-shadow: rgb(0 0 0 / 22%) 3px 5px 30px 0;
@@ -80,7 +145,7 @@ html[data-desktop="true"] .image-wrap img {
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 68vh;
+  max-height: max(240px, calc(100vh - 310px));
 }
 
 .draw-layer {
@@ -89,11 +154,6 @@ html[data-desktop="true"] .image-wrap img {
   z-index: 2;
   cursor: crosshair;
   touch-action: none;
-}
-
-.image-wrap[data-view="result"] .draw-layer,
-.image-wrap[data-view="mask"] .draw-layer {
-  display: none;
 }
 
 .selection-box {
@@ -120,26 +180,253 @@ html[data-desktop="true"] .image-wrap img {
   white-space: nowrap;
 }
 
-.step-number {
+.panel-footer {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 16px;
+  border-top: 1px solid var(--color-base-300);
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+  font-size: 11px;
+}
+
+.control-bar {
   display: grid;
   flex: 0 0 auto;
-  width: 1.5rem;
-  height: 1.5rem;
-  place-items: center;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 16px;
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+}
+
+.control-group {
+  min-width: 0;
+}
+
+.control-group + .control-group,
+.control-group + .control-actions {
+  border-left: 1px solid var(--color-base-300);
+  padding-left: 14px;
+}
+
+.control-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.value-pill {
+  min-width: 3.5rem;
+  padding: 1px 8px;
+  border: 1px solid var(--color-base-300);
   border-radius: 9999px;
-  background: var(--color-base-200);
+  color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.control-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 108px;
+  left: 50%;
+  z-index: 60;
+  width: min(520px, calc(100vw - 32px));
+  transform: translateX(-50%);
+}
+
+.file-list {
+  display: flex;
+  max-height: 40vh;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.file-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   color: var(--color-base-content);
-  font-size: 0.75rem;
-  font-weight: 600;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.file-row:hover {
+  background: var(--color-base-200);
+}
+
+.file-row.is-current {
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-base-100));
+}
+
+.file-row-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-base-200);
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
+
+.file-row-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.file-row-name {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-row-meta {
+  display: block;
+  overflow: hidden;
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-row-badge {
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  font-size: 10px;
+  line-height: 1.6;
+  padding: 1px 7px;
+}
+
+/* The native shell should feel like a window, not a scrolling web page. */
+html[data-desktop="true"],
+html[data-desktop="true"] body {
+  height: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: none;
+}
+
+html[data-desktop="true"]::-webkit-scrollbar,
+html[data-desktop="true"] body::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-desktop="true"] .app-shell {
+  height: 100vh;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    min-height: 100vh;
+    height: auto;
+    padding: 12px;
+  }
+
+  .top-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preview-panel {
+    min-height: 460px;
+  }
+
+  .control-bar {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .control-mode {
+    grid-column: span 2;
+  }
+
+  .control-actions {
+    grid-column: span 2;
+    justify-content: flex-end;
+  }
+
+  .control-group + .control-group,
+  .control-group + .control-actions {
+    border-left: 0;
+    padding-left: 0;
+  }
 }
 
 @media (max-width: 640px) {
-  .stage {
-    max-height: 55vh;
+  .control-bar {
+    grid-template-columns: minmax(0, 1fr);
   }
 
+  .control-mode,
+  .control-actions {
+    grid-column: auto;
+  }
+
+  .control-actions {
+    justify-content: stretch;
+  }
+
+  .control-actions .btn {
+    flex: 1;
+  }
+
+  .preview-panel {
+    min-height: 400px;
+  }
+
+  .image-wrap,
   .image-wrap img {
-    max-height: 55vh;
+    max-height: 50vh;
+  }
+
+  .toast-container {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    transform: none;
   }
 }
 

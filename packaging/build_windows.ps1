@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 Set-Location (Join-Path $PSScriptRoot "..")
-$Version = if ($env:OMA_APP_VERSION) { $env:OMA_APP_VERSION } else { "0.1.1" }
+$Version = if ($env:OMA_APP_VERSION) { $env:OMA_APP_VERSION } else { "0.1.2" }
 $env:OMA_APP_VERSION = $Version
 
 if (-not (Test-Path "models/inpainting_lama_2025jan.onnx")) {

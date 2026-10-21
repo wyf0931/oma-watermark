@@ -41,7 +41,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
-            VERSION="0.1.0"
+            VERSION="0.1.2"
           fi
           OMA_APP_VERSION="$VERSION" bash packaging/build_macos.sh
 
@@ -80,7 +80,7 @@ jobs:
           if ($env:GITHUB_REF -like "refs/tags/v*") {
             $env:OMA_APP_VERSION = $env:GITHUB_REF_NAME.Substring(1)
           } else {
-            $env:OMA_APP_VERSION = "0.1.0"
+            $env:OMA_APP_VERSION = "0.1.2"
           }
           ./packaging/build_windows.ps1
 
