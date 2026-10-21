@@ -1,6 +1,6 @@
 # AGENTS.md
 
-本文件面向在本仓库工作的编码 Agent（以及人类维护者），用于快速理解项目边界、关键链路和提交前检查。修改代码前先读本文件、`README.md` 和 `DESIGN.md`。
+本文件面向在本仓库工作的编码 Agent（以及人类维护者），用于快速理解项目边界、关键链路和提交前检查。修改代码前先读本文件、`README.md`、`README.zh-CN.md`、`docs/` 和 `DESIGN.md`。
 
 ## 项目目标
 
@@ -33,6 +33,9 @@
 
 ```text
 DESIGN.md                        Apple 设计语言参考
+README.md                        English README（默认入口）
+README.zh-CN.md                  中文 README
+docs/                            安装、桌面打包、架构、API、开发、FAQ（含 zh-CN）
 docs/screenshot.png              README 展示图（macOS 桌面模式）
 src/oma_watermark/__init__.py    `oma-watermark` Web 入口
 src/oma_watermark/app.py         FastAPI 路由、上传限制、静态资源、健康检查
@@ -193,7 +196,7 @@ multipart/form-data:
   filename, width, height, detected_pixels, mode, expand, roi
 ```
 
-- 参数或返回结构变化时同步更新 `app.js`、`tests/test_api.py`、`README.md`。
+- 参数或返回结构变化时同步更新 `app.js`、`tests/test_api.py`、`README.md`、`README.zh-CN.md` 和 `docs/api.md`（及中文版）。
 - 422：参数/ROI 错误；503：模型缺失（UI 会回退 fast）；500：AI 推理失败。
 - `GET /api/health` 包含 `ai_available` 和 `ai_engine`。
 
@@ -223,7 +226,8 @@ multipart/form-data:
 - [ ] `uv run pytest` 全部通过
 - [ ] `node --check src/oma_watermark/static/app.js` 通过
 - [ ] 没有提交 `.venv/`、`.artifacts/`、`models/`、`build/`、`dist/`、`node_modules/`
-- [ ] README / AGENTS.md / DESIGN.md 与实际行为一致
+- [ ] README.md / README.zh-CN.md / docs / AGENTS.md / DESIGN.md 与实际行为一致
+- [ ] 中英文 README 和 `docs/`、`docs/zh-CN/` 链接完整、互相对应
 - [ ] 新增静态文件/模型资源包含在 PyInstaller spec
 - [ ] 桌面模式隐藏 navbar，下载按钮可用
 - [ ] macOS DMG 构建成功且 `.app` 能启动
