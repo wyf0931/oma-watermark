@@ -2,7 +2,7 @@
 
 @source "./index.html";
 @source "./app.js";
-@source inline("alert-error alert-success alert-info alert-soft tab-disabled");
+@source inline("alert-error alert-success alert-info alert-soft tab-disabled status status-warning status-success status-error status-neutral");
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",

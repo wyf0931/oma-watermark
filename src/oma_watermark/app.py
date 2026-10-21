@@ -35,7 +35,7 @@ def _static_dir() -> Path:
 STATIC_DIR = _static_dir()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
-app = FastAPI(title="水印清除器", version="0.1.2")
+app = FastAPI(title="水印清除器", version="0.1.3")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

@@ -3,7 +3,6 @@
 
   const MAX_FILE_BYTES = 25 * 1024 * 1024;
   const MIN_ROI_SIZE = 4;
-  const MAX_RECENT_FILES = 8;
 
   const elements = {
     originalPanel: document.querySelector("#originalPanel"),
@@ -29,33 +28,25 @@
     fileInput: document.querySelector("#fileInput"),
     openButton: document.querySelector("#openButton"),
     openEmptyButton: document.querySelector("#openEmptyButton"),
-    openFromListButton: document.querySelector("#openFromListButton"),
-    fileListButton: document.querySelector("#fileListButton"),
-    fileListDialog: document.querySelector("#fileListDialog"),
-    fileList: document.querySelector("#fileList"),
     helpButton: document.querySelector("#helpButton"),
     helpDialog: document.querySelector("#helpDialog"),
-    reprocessTopButton: document.querySelector("#reprocessTopButton"),
-    clearSelectionButton: document.querySelector("#clearSelectionButton"),
     clearSelectionIconButton: document.querySelector("#clearSelectionIconButton"),
+    processHeaderButton: document.querySelector("#processHeaderButton"),
+    startHeaderIcon: document.querySelector("#startHeaderIcon"),
+    reprocessHeaderIcon: document.querySelector("#reprocessHeaderIcon"),
     modeSelect: document.querySelector("#modeSelect"),
     aiHint: document.querySelector("#aiHint"),
+    aiStatusDot: document.querySelector("#aiStatusDot"),
     thresholdInput: document.querySelector("#thresholdInput"),
     thresholdValue: document.querySelector("#thresholdValue"),
     expandInput: document.querySelector("#expandInput"),
     expandValue: document.querySelector("#expandValue"),
-    processButton: document.querySelector("#processButton"),
-    processSpinner: document.querySelector("#processSpinner"),
-    processIcon: document.querySelector("#processIcon"),
-    processLabel: document.querySelector("#processLabel"),
-    reprocessTopLabel: document.querySelector("#reprocessTopLabel"),
     toastContainer: document.querySelector("#toastContainer"),
     status: document.querySelector("#status"),
   };
 
   const state = {
     file: null,
-    fileKey: null,
     originalUrl: null,
     resultUrl: null,
     maskUrl: null,
@@ -69,7 +60,6 @@
     aiStatusLoaded: false,
     modeTouched: false,
     rightView: "result",
-    recentFiles: [],
     requestId: 0,
     toastTimer: null,
   };
@@ -91,13 +81,17 @@
 
   function updateAiHint() {
     if (!state.aiStatusLoaded) {
-      elements.aiHint.textContent = "正在检测 AI 模型…";
+      elements.aiHint.textContent = "正在检测…";
+      elements.aiHint.title = "正在检测 AI 模型";
+      elements.aiStatusDot.className = "status status-warning";
     } else if (state.aiAvailable) {
-      elements.aiHint.textContent = "AI 模型已就绪";
-    } else if (elements.modeSelect.value === "ai") {
-      elements.aiHint.textContent = "AI 模型未安装";
+      elements.aiHint.textContent = "AI 就绪";
+      elements.aiHint.title = "AI 模型已就绪";
+      elements.aiStatusDot.className = "status status-success";
     } else {
-      elements.aiHint.textContent = "AI 模型未安装，可用快速模式";
+      elements.aiHint.textContent = "AI 未安装";
+      elements.aiHint.title = "AI 模型未安装，可用快速模式";
+      elements.aiStatusDot.className = "status status-warning";
     }
   }
 
@@ -116,87 +110,6 @@
     updateControls();
   }
 
-  function fileKey(file) {
-    return `${file.name}:${file.size}:${file.lastModified}`;
-  }
-
-  function rememberFile(file) {
-    const key = fileKey(file);
-    const existing = state.recentFiles.find((entry) => entry.key === key);
-    if (existing) {
-      existing.file = file;
-      return existing;
-    }
-    const entry = {
-      key,
-      file,
-      name: file.name,
-      size: file.size,
-      width: 0,
-      height: 0,
-    };
-    state.recentFiles.unshift(entry);
-    state.recentFiles = state.recentFiles.slice(0, MAX_RECENT_FILES);
-    return entry;
-  }
-
-  function updateCurrentFileDimensions() {
-    const entry = state.recentFiles.find((item) => item.key === state.fileKey);
-    if (entry) {
-      entry.width = state.imageWidth;
-      entry.height = state.imageHeight;
-    }
-  }
-
-  function renderFileList() {
-    elements.fileList.replaceChildren();
-    if (state.recentFiles.length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "py-8 text-center text-sm text-base-content/45";
-      empty.textContent = "还没有打开过图片";
-      elements.fileList.appendChild(empty);
-      return;
-    }
-
-    for (const entry of state.recentFiles) {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = `file-row${entry.key === state.fileKey ? " is-current" : ""}`;
-
-      const icon = document.createElement("span");
-      icon.className = "file-row-icon";
-      icon.innerHTML =
-        '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>';
-
-      const main = document.createElement("span");
-      main.className = "file-row-main";
-      const name = document.createElement("span");
-      name.className = "file-row-name";
-      name.textContent = entry.name;
-      const meta = document.createElement("span");
-      meta.className = "file-row-meta";
-      meta.textContent =
-        entry.width && entry.height
-          ? `${entry.width} × ${entry.height} px`
-          : `${(entry.size / 1024 / 1024).toFixed(1)} MB`;
-      main.append(name, meta);
-      row.append(icon, main);
-
-      if (entry.key === state.fileKey) {
-        const badge = document.createElement("span");
-        badge.className = "file-row-badge";
-        badge.textContent = "当前";
-        row.appendChild(badge);
-      }
-
-      row.addEventListener("click", () => {
-        elements.fileListDialog.close();
-        loadFile(entry.file);
-      });
-      elements.fileList.appendChild(row);
-    }
-  }
-
   function updateMeta() {
     if (!state.file || !state.imageWidth) {
       elements.imageMeta.textContent = "";
@@ -213,6 +126,11 @@
     );
   }
 
+  function primaryActionLabel() {
+    if (state.loading) return "处理中…";
+    return state.resultUrl ? "重新处理" : "开始处理";
+  }
+
   function updateControls() {
     const roiReady = hasValidRoi();
     const aiUnavailable =
@@ -225,15 +143,16 @@
       roiReady &&
       !state.loading &&
       !aiUnavailable;
+    const actionLabel = primaryActionLabel();
 
-    elements.processButton.disabled = !canProcess;
-    elements.reprocessTopButton.disabled = !canProcess;
-    elements.clearSelectionButton.disabled = state.loading || !roiReady;
+    elements.processHeaderButton.disabled = !canProcess;
+    elements.processHeaderButton.setAttribute("aria-label", actionLabel);
+    elements.processHeaderButton.title = actionLabel;
+    elements.startHeaderIcon.classList.toggle("hidden", Boolean(state.resultUrl));
+    elements.reprocessHeaderIcon.classList.toggle("hidden", !state.resultUrl);
     elements.clearSelectionIconButton.disabled = state.loading || !roiReady;
     elements.openButton.disabled = state.loading;
     elements.openEmptyButton.disabled = state.loading;
-    elements.openFromListButton.disabled = state.loading;
-    elements.fileListButton.disabled = state.loading;
     elements.modeSelect.disabled = state.loading;
     elements.thresholdInput.disabled = state.loading;
     elements.expandInput.disabled = state.loading;
@@ -242,11 +161,6 @@
     elements.thresholdValue.textContent = elements.thresholdInput.value;
     elements.expandValue.value = elements.expandInput.value;
     elements.expandValue.textContent = `${elements.expandInput.value} px`;
-
-    elements.processSpinner.hidden = !state.loading;
-    elements.processIcon.classList.toggle("hidden", state.loading);
-    elements.processLabel.textContent = state.loading ? "处理中…" : "重新处理";
-    elements.reprocessTopLabel.textContent = state.loading ? "处理中…" : "重新处理";
 
     updateAiHint();
     updateMeta();
@@ -299,6 +213,7 @@
     const pixels = Number(payload.detected_pixels).toLocaleString("zh-CN");
     elements.resultMeta.textContent = `${modeLabel} · 修复 ${pixels} 像素`;
     elements.resultHint.textContent = `${payload.roi.width} × ${payload.roi.height} 选区`;
+    elements.viewHint.textContent = "已框选水印区域，点击右上角的刷新按钮";
     setResultView("result");
     elements.downloadLink.href = state.resultUrl;
     elements.downloadLink.download = state.resultFilename;
@@ -324,11 +239,9 @@
     }
 
     state.requestId += 1;
-    rememberFile(file);
     if (state.originalUrl) URL.revokeObjectURL(state.originalUrl);
 
     state.file = file;
-    state.fileKey = fileKey(file);
     state.originalUrl = URL.createObjectURL(file);
     state.imageWidth = 0;
     state.imageHeight = 0;
@@ -349,7 +262,6 @@
       elements.image.onerror = null;
       state.imageWidth = elements.image.naturalWidth;
       state.imageHeight = elements.image.naturalHeight;
-      updateCurrentFileDimensions();
       elements.emptyState.hidden = true;
       elements.editor.hidden = false;
       renderSelection();
@@ -359,7 +271,6 @@
       elements.image.onload = null;
       elements.image.onerror = null;
       state.file = null;
-      state.fileKey = null;
       state.imageWidth = 0;
       state.imageHeight = 0;
       state.roi = null;
@@ -417,7 +328,9 @@
     renderSelection();
     updateControls();
     if (state.roi) {
-      elements.viewHint.textContent = "已框选水印区域，点击重新处理";
+      elements.viewHint.textContent = state.resultUrl
+        ? "已框选水印区域，点击右上角的刷新按钮"
+        : "已框选水印区域，点击右上角的开始按钮";
     }
   }
 
@@ -529,20 +442,11 @@
 
   elements.openButton.addEventListener("click", () => elements.fileInput.click());
   elements.openEmptyButton.addEventListener("click", () => elements.fileInput.click());
-  elements.openFromListButton.addEventListener("click", () => {
-    elements.fileListDialog.close();
-    elements.fileInput.click();
-  });
 
   elements.fileInput.addEventListener("change", (event) => {
     const file = event.target.files?.[0];
     if (file) loadFile(file);
     event.target.value = "";
-  });
-
-  elements.fileListButton.addEventListener("click", () => {
-    renderFileList();
-    elements.fileListDialog.showModal();
   });
 
   elements.helpButton.addEventListener("click", () => {
@@ -557,10 +461,8 @@
     if (!elements.helpDialog.open) elements.helpDialog.showModal();
   });
 
-  elements.clearSelectionButton.addEventListener("click", clearSelection);
   elements.clearSelectionIconButton.addEventListener("click", clearSelection);
-  elements.processButton.addEventListener("click", startProcessing);
-  elements.reprocessTopButton.addEventListener("click", startProcessing);
+  elements.processHeaderButton.addEventListener("click", startProcessing);
 
   elements.downloadLink.addEventListener("click", (event) => {
     if (!elements.downloadLink.getAttribute("href")) event.preventDefault();

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-VERSION="${OMA_APP_VERSION:-${VERSION:-0.1.2}}"
+VERSION="${OMA_APP_VERSION:-${VERSION:-0.1.3}}"
 export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-12.0}"
 
 if [ ! -f "models/inpainting_lama_2025jan.onnx" ]; then
