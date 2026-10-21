@@ -195,3 +195,7 @@ uv run pytest
 返回 JSON：`result`、`mask_overlay`（data URL）、`filename`、尺寸、`detected_pixels`、`mode`、`expand`、`roi`。
 
 `GET /api/health` 返回 `status`、`ai_available` 和 `ai_engine`，用于前端显示模型是否就绪。
+
+## 许可证
+
+本项目基于 [MIT License](LICENSE) 开源。Copyright (c) 2026 Scott。

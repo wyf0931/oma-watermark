@@ -3,6 +3,8 @@ name = "oma-watermark"
 version = "0.1.3"
 description = "Local web tool for removing light watermarks with OpenCV and optional LaMa AI inpainting"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Scott", email = "yunfei0931@foxmail.com" }
 ]
